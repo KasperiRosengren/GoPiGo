@@ -108,7 +108,7 @@ def main():
             [0, 0, 0, 0, 0, 0, 0]]
 
     start = (0, 0) 
-    end = (7, 6)
+    end = (6, 6)
 
     path = astar(maze, start, end)
     print(path)
