@@ -32,4 +32,3 @@ class Grid:
 
 mainGrid = Grid(5, 5)
 mainGrid.PrintGrid()
-print("hello")
