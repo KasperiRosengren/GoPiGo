@@ -1,0 +1,6 @@
+backend/*
+!backend/requirements.txt
+backend/env/*
+!/backend/env/
+!/backend/env/programs/
+
