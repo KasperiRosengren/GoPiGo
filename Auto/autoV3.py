@@ -23,7 +23,7 @@ Kd = 2500.0 # ditto as above
 
 NeedToNavigate = True
 myLocationX = 1
-myLocationY = 0
+myLocationY = 1
 destinationX = 0
 destinationY = 0
 myHeading = 0
@@ -70,7 +70,7 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("gopigo/car1/#")
+    client.subscribe("gopigo/car2/#")
 
 
 
@@ -80,7 +80,7 @@ def on_message(client, userdata, msg):
     print("Topic: "+topic)
     print("Message: "+message)
 
-    if(topic=="gopigo/car1/command/go"):
+    if(topic=="gopigo/car2/command/go"):
         print("go somewhere topic")
         tempMes = message.split(",")
         coordinateX = tempMes[0]
@@ -348,6 +348,42 @@ def DriveToNextGrid():
             GOForward(linevalues)
 
 
+def IsNextGridClear(direction = "none"):
+    if(direction=="up"):
+        if(len(maze) > myLocationY +1):
+            if(maze[myLocationY +1][myLocationX] == 0):
+                return True
+            else:
+                return False
+        else:
+            return False
+    elif(direction=="right"):
+        if(len(maze[myLocationY]) > myLocationX +1):
+            if(maze[myLocationY][myLocationX +1] == 0):
+                return True
+            else:
+                return False
+        else:
+            return False
+    elif(direction=="down"):
+        if(myLocationY > 0):
+            if(maze[myLocationY -1][myLocationX] == 0):
+                return True
+            else:
+                return False
+        else:
+            return False
+    elif(direction=="left"):
+        if(myLocationX > 0):
+            if(maze[myLocationY][myLocationX -1] == 0):
+                return True
+            else:
+                return False
+        else:
+            return False
+    return False
+
+
 def AvoidObstacle():
     global myLocationX
     global myLocationY
@@ -357,123 +393,202 @@ def AvoidObstacle():
     findNewRoute = True
     while(findNewRoute==True):
         if(myHeading == 0):
-            if(len(maze[myLocationY]) > myLocationX +1):
-                if(maze[myLocationY][myLocationX +1] == 0):
-                    DecideTurn("right")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationX = myLocationX +1
-                            findNewRoute = False
-                    else:
+            if(IsNextGridClear("right")):
+                DecideTurn("right")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationX = myLocationX +1
                         findNewRoute = False
-                        
-            elif(myLocationX > 0):
-                if(maze[myLocationY][myLocationX -1] == 0):
-                    DecideTurn("left")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationX = myLocationX -1
-                            findNewRoute = False
                     else:
+                        maze[myLocationY][myLocationX + 1] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationX = myLocationX +1
+                    findNewRoute = False
+                
+                        
+            elif(IsNextGridClear("left")):
+                DecideTurn("left")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationX = myLocationX -1
                         findNewRoute = False
+                    else:
+                        maze[myLocationY][myLocationX - 1] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationX = myLocationX -1
+                    findNewRoute = False
+
+            else:
+                DecideTurn("down")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
+                        DriveToNextGrid()
+                        myLocationY = myLocationY -1
+                        findNewRoute = False
+                    else:
+                        maze[myLocationY -1][myLocationX] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationY = myLocationY -1
+                    findNewRoute = False
         
         elif(myHeading == 90):
-            if(myLocationY > 0):
-                if(maze[myLocationY -1][myLocationX] == 0):
-                    DecideTurn("down")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationY = myLocationY -1
-                            findNewRoute = False
-                    else:
+            if(IsNextGridClear("down")):
+                DecideTurn("down")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationY = myLocationY -1
                         findNewRoute = False
-                        
-            elif(len(maze) > myLocationY +1):
-                if(maze[myLocationY +1][myLocationX] == 0):
-                    DecideTurn("up")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationY = myLocationY +1
-                            findNewRoute = False
                     else:
+                        maze[myLocationY - 1][myLocationX] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationY = myLocationY -1
+                    findNewRoute = False
+                        
+            elif(IsNextGridClear("up")):
+                DecideTurn("up")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationY = myLocationY +1
                         findNewRoute = False
-
-        elif(myHeading == 180):
-            if(myLocationX > 0):
-                if(maze[myLocationY][myLocationX -1] == 0):
-                    DecideTurn("left")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationX = myLocationX -1
-                            findNewRoute = False
                     else:
+                        maze[myLocationY +1][myLocationX] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationY = myLocationY +1
+                    findNewRoute = False
+            
+            else:
+                DecideTurn("left")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationX = myLocationX -1
                         findNewRoute = False
-                        
-            elif(len(maze[myLocationY]) > myLocationX +1):
-                if(maze[myLocationY][myLocationX +1] == 0):
-                    DecideTurn("right")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationX = myLocationX +1
-                            findNewRoute = False
                     else:
+                        maze[myLocationY][myLocationX -1] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationX = myLocationX -1
+                    findNewRoute = False
+
+        elif(myHeading == 180):
+            if(IsNextGridClear("left")):
+                DecideTurn("left")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
+                        DriveToNextGrid()
+                        myLocationX = myLocationX -1
+                        findNewRoute = False
+                    else:
+                        maze[myLocationY][myLocationX - 1] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationX = myLocationX -1
+                    findNewRoute = False
+                        
+            elif(IsNextGridClear("right")):
+                DecideTurn("right")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationX = myLocationX +1
                         findNewRoute = False
+                    else:
+                        maze[myLocationY][myLocationX + 1] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationX = myLocationX +1
+                    findNewRoute = False
+            
+            else:
+                DecideTurn("right")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
+                        DriveToNextGrid()
+                        myLocationX = myLocationX +1
+                        findNewRoute = False
+                    else:
+                        maze[myLocationY][myLocationX +1] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationX = myLocationX +1
+                    findNewRoute = False
+                
 
         elif(myHeading == 270):
-            if(len(maze) > myLocationY +1):
-                if(maze[myLocationY +1][myLocationX] == 0):
-                    DecideTurn("up")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationY = myLocationY +1
-                            findNewRoute = False
-                    else:
+            if(IsNextGridClear("up")):
+                DecideTurn("up")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationY = myLocationY +1
                         findNewRoute = False
-                        
-            elif(myLocationY > 0):
-                if(maze[myLocationY -1][myLocationX] == 0):
-                    DecideTurn("down")
-                    if(IsItSafeToCross()==False):
-                        time.sleep(5)
-                        if(IsItSafeToCross()==True):
-                            DriveToNextGrid()
-                            myLocationY = myLocationY -1
-                            findNewRoute = False
                     else:
+                        maze[myLocationY +1][myLocationX] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationY = myLocationY +1
+                    findNewRoute = False
+                        
+            elif(IsNextGridClear("down")):
+                DecideTurn("down")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
                         DriveToNextGrid()
                         myLocationY = myLocationY -1
                         findNewRoute = False
+                    else:
+                        maze[myLocationY -1][myLocationX] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationY = myLocationY -1
+                    findNewRoute = False
+            
+            else:
+                DecideTurn("up")
+                if(IsItSafeToCross()==False):
+                    time.sleep(5)
+                    if(IsItSafeToCross()==True):
+                        DriveToNextGrid()
+                        myLocationY = myLocationY +1
+                        findNewRoute = False
+                    else:
+                        maze[myLocationY +1][myLocationX] = 1
+                else:
+                    DriveToNextGrid()
+                    myLocationY = myLocationY +1
+                    findNewRoute = False
 
-
-
+def ResetMaze():
+    global maze
+    maze = [[0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0]]
 
 
 def  calculateRoute(coordinateX, coordinateY):
@@ -485,7 +600,7 @@ def  calculateRoute(coordinateX, coordinateY):
 
     start = (myLocationY, myLocationX) 
     end = (coordinateY, coordinateX)
-
+    ResetMaze()
     path = astar(maze, start, end)
     print(path)
     del path[0]
@@ -503,7 +618,9 @@ def  calculateRoute(coordinateX, coordinateY):
                     time.sleep(5)
                     if(IsItSafeToCross()==False):
                         print("I need to avoid obstacle")
+                        maze[myLocationY][myLocationX + 1] = 1
                         AvoidObstacle()
+                        #ResetMaze()
                         end = (coordinateY, coordinateX)
                         start = (myLocationY, myLocationX)
                         path = astar(maze, start, end)
@@ -527,7 +644,9 @@ def  calculateRoute(coordinateX, coordinateY):
                     time.sleep(5)
                     if(IsItSafeToCross()==False):
                         print("I need to avoid obstacle")
+                        maze[myLocationY][myLocationX - 1] = 1
                         AvoidObstacle()
+                        #ResetMaze()
                         end = (coordinateY, coordinateX)
                         start = (myLocationY, myLocationX)
                         path = astar(maze, start, end)
@@ -554,7 +673,9 @@ def  calculateRoute(coordinateX, coordinateY):
                     time.sleep(5)
                     if(IsItSafeToCross()==False):
                         print("I need to avoid obstacle")
+                        maze[myLocationY +1][myLocationX] = 1
                         AvoidObstacle()
+                        #ResetMaze()
                         end = (coordinateY, coordinateX)
                         start = (myLocationY, myLocationX)
                         path = astar(maze, start, end)
@@ -578,7 +699,9 @@ def  calculateRoute(coordinateX, coordinateY):
                     time.sleep(5)
                     if(IsItSafeToCross()==False):
                         print("I need to avoid obstacle")
+                        maze[myLocationY -1][myLocationX] = 1
                         AvoidObstacle()
+                        #ResetMaze()
                         end = (coordinateY, coordinateX)
                         start = (myLocationY, myLocationX)
                         path = astar(maze, start, end)
@@ -601,7 +724,7 @@ def Main():
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("192.168.0.100", 1883, 60)
+    client.connect("192.168.0.101", 1883, 60)
     client.loop_forever()
 
 Main()
