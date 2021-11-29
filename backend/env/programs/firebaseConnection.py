@@ -1,17 +1,6 @@
 from firebase import Firebase
 from firebaseConfFile import *
-"""
-config = {
-  'apiKey': "AIzaSyB4UQ_9aRCEbzrytVm4Y66wmckaVsjok7Y",
-  'authDomain': "gopigo-f9d4f.firebaseapp.com",
-  'databaseURL': "https://gopigo-f9d4f-default-rtdb.europe-west1.firebasedatabase.app",
-  'projectId': "gopigo-f9d4f",
-  'storageBucket': "gopigo-f9d4f.appspot.com",
-  'messagingSenderId': "879910255615",
-  'appId': "1:879910255615:web:ee1fcff64ddaabce1945ca",
-  'measurementId': "G-W7SCB0XFZ8"
-}
-"""
+
 """
 firebase = Firebase(config)
 db = firebase.database()
