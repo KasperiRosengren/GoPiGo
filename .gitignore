@@ -3,4 +3,5 @@ backend/*
 backend/env/*
 !/backend/env/
 !/backend/env/programs/
+/backend/env/programs/firebaseConfFile.py
 

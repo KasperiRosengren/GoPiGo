@@ -93,6 +93,7 @@ def astar(maze, start, end):
 
             # Add the child to the open list
             open_list.append(child)
+            print(f"{child.position}\t{child.f}")
 
 
 def main():
@@ -103,12 +104,12 @@ def main():
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 1],
+            [0, 0, 0, 1, 0],
             [0, 0, 0, 0, 0]]
 
-    start = (0, 0) 
-    end = (8, 4)
+    start = (4, 3) 
+    end = (8, 3)
 
     path = astar(maze, start, end)
     print(path)

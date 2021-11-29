@@ -3,8 +3,9 @@ from di_sensors.easy_line_follower import EasyLineFollower
 import time
 import random
 import paho.mqtt.client as mqtt
+from firebase import Firebase
 """
-    MQTT command
+    No MQTT, uses Firebase instead
     Pathfinding
     Obstacle avoidance
 """

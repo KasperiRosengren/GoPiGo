@@ -3,7 +3,11 @@ from di_sensors.easy_line_follower import EasyLineFollower
 import time
 import random
 import paho.mqtt.client as mqtt
-
+"""
+    No obstacle avoidance
+    MQTT commands
+    Pathfinding
+"""
 gpg = easy.EasyGoPiGo3()
 lf = EasyLineFollower()
 dist_sens = gpg.init_distance_sensor()
