@@ -116,6 +116,39 @@ def handleMenu():
         
 firebase = Firebase(config)
 db = firebase.database()
+
+def stream_handler(message):
+    print(message["event"])
+
+    print(message["path"])
+
+    print(message["data"])
+
+my_stream = db.child("cars").stream(stream_handler)
+
+"""
+thisCarList = db.child("cars").get()
+
+for car in thisCarList.each():
+    print(f"Car: {car.key()}")
+    print(f"\tID: {car.val()['id']}")
+    print(f"\tName: {car.val()['name']}")
+    print(f"\tPosition:")
+    print(f"\t\tX: {car.val()['position']['x']}")
+    print(f"\t\tY: {car.val()['position']['y']}")
+    print(f"\t\tHeading: {car.val()['position']['heading']}")
+    print("")
+    print("##############END OF CAR#################")
+    print("")
+
+
+
+
+
+
+
+
+
 number = 0
 thisCar = db.child("cars").child(f"car{number}").get()
 #print(thisCarList)
@@ -129,6 +162,7 @@ orgY = thisCar.val()['position']['y']
 orgHeading = thisCar.val()['position']['heading']
 newX = orgX + 1
 db.child("cars").child(f"car{number}").update({"position": {'x': newX, 'y': orgY, 'heading': orgHeading}})
+"""
 """
 try:
     

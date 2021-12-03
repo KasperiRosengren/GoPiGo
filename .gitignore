@@ -4,4 +4,6 @@ backend/env/*
 !/backend/env/
 !/backend/env/programs/
 /backend/env/programs/firebaseConfFile.py
+Auto/firebaseConfFile.py
+backend/env/programs/gopigo-f9d4f-firebase-adminsdk-bd305-0c23e9d9c4.json
 
