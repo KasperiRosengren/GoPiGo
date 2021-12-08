@@ -2,6 +2,7 @@ backend/*
 !backend/requirements.txt
 backend/env/*
 !/backend/env/
+!/backend/env/requirements.txt
 !/backend/env/programs/
 /backend/env/programs/firebaseConfFile.py
 Auto/firebaseConfFile.py
