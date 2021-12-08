@@ -2,8 +2,10 @@ import easygopigo3 as easy
 from di_sensors.easy_line_follower import EasyLineFollower
 import time
 import random
-import paho.mqtt.client as mqtt
-from firebase import Firebase
+import firebase_admin
+from firebaseConfFile import config
+from firebase_admin import credentials
+from firebase_admin import db
 """
     No MQTT, uses Firebase instead
     Pathfinding
@@ -13,6 +15,9 @@ gpg = easy.EasyGoPiGo3()
 lf = EasyLineFollower()
 dist_sens = gpg.init_distance_sensor()
 serv=gpg.init_servo()
+
+
+
 
 #gpg.set_speed(250)
 
@@ -67,33 +72,6 @@ class Node():
 
     def __eq__(self, other):
         return self.position == other.position
-
-
-
-def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
-
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    client.subscribe("gopigo/car2/#")
-
-
-
-def on_message(client, userdata, msg):
-    topic = msg.topic
-    message = str(msg.payload)
-    print("Topic: "+topic)
-    print("Message: "+message)
-
-    if(topic=="gopigo/car2/command/go"):
-        print("go somewhere topic")
-        tempMes = message.split(",")
-        coordinateX = tempMes[0]
-        coordinateX = coordinateX[2:]
-        coordinateY = tempMes[1]
-        coordinateY = coordinateY[:-1]
-
-        calculateRoute(int(coordinateX), int(coordinateY))
 
 def AlterHeading(degrees):
     global myHeading
@@ -724,12 +702,35 @@ def  calculateRoute(coordinateX, coordinateY):
 
         
     print("next stop")
-    
-def Main():
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect("192.168.0.101", 1883, 60)
-    client.loop_forever()
 
-Main()
+
+def listener(event):
+    print("newStufff")
+    print(event.event_type)  # can be 'put' or 'patch'
+    print(event.path)  # relative to the reference, it seems
+    print(event.data)  # new data at /reference/event.path. None if deleted
+    dostuff()
+
+
+
+
+def dostuff():
+    for x in range(1_000_000_000):
+        sunm = 1 +1
+    print("Thread complete!")
+
+
+
+
+    
+try:
+    ourthread = firebase_admin.db.reference('cars/').listen(listener)
+    while True:
+        print("hi")
+        time.sleep(0.1)
+        
+except KeyboardInterrupt:
+    print('Interrupted')
+    ourthread.close()
+    print("Thread closed")
+    sys.exit()
