@@ -10,6 +10,29 @@ cred = credentials.Certificate('gopigo-f9d4f-firebase-adminsdk-bd305-0c23e9d9c4.
 # Initialize the app with a service account, granting admin privileges
 firebase_admin.initialize_app(cred, config)
 
+class Product:
+    def __init__(self, productID, car, item, status):
+        self.status = "ordered"
+        self.car = "none"
+        self.id = productID
+        self.status = status
+
+        try:
+            #print(f"Adding product listener for {self.id}")
+            self.productListenerThread = firebase_admin.db.reference(f'orderList/{self.id}').listen(self.productListener)
+
+        except:
+            print(f"Firebase listener failed for {self.id}")
+
+    def productListener(self, event):
+         print(f"ProductListener:\ttype: {event.event_type}\tpath: {event.path}\tdata: {event.data}")
+
+         if(event.data=="loaded"):
+             self.car.leaveItem()
+
+
+
+
 class Car:
     def __init__(self, posX, posY, carID, carName, callName):
         self.position = {'x': posX, 'y': posY}
@@ -26,12 +49,7 @@ class Car:
             print(f"Firebase listener failed for {self.carName}")
 
     def carListener(self, event):
-        print("Event type")
-        print(event.event_type)  # can be 'put' or 'patch'
-        print("Event path")
-        print(event.path)  # relative to the reference, it seems
-        print("Event data")
-        print(event.data)  # new data at /reference/event.path. None if deleted
+        #print(f"CarListener:\ttype: {event.event_type}\tpath: {event.path}\tdata: {event.data}")
 
         path = event.path
         newData = event.data
@@ -43,6 +61,16 @@ class Car:
             self.position.y = newData
         elif(path=="/position/heading"):
             self.position.heading = newData
+    
+
+    def getItem(self):
+        self.status = "travel_loading"
+        print(f"{self.carName} Is headed to loading bay!")
+    
+
+    def leaveItem(self):
+        self.status = "travel_unloading"
+        print(f"{self.carName} Is headed to unloading bay!")
 
 
     def printCarInfo(self):
@@ -59,54 +87,85 @@ class Manager:
     def __init__(self):
         self.orders = []
         self.testList = []
+        """
         self.carList = [
             {'car0': Car(0, 0, 0, 'car0', 'Niilo')},
             {'car1': Car(1, 0, 1, 'car1', 'Pate')},
-            {'car2': Car(2, 0, 2, 'car2', 'NewGreatCar')},
+            {'car2': Car(2, 0, 2, 'car2', 'NewGreatCar')}
             ]
-        #self.car0 = Car(0, 0, 0, 'car0', 'Pate')
-        #self.car0 = {'status': 'warehouse', 'coordinates': {'x': 0, 'y': 0}}
-        #self.car1 = {'status': 'warehouse', 'coordinates': {'x': 1, 'y': 0}}
         """
         self.carList = [
-            {'car0': {'status': 'warehouse', 'coordinates': {'x': 0, 'y': 0}}},
-            {'car1': {'status': 'warehouse', 'coordinates': {'x': 1, 'y': 0}}},
-            {'car2': {'status': 'warehouse', 'coordinates': {'x': 2, 'y': 0}}}
+            Car(0, 0, 0, 'car0', 'Niilo'),
+            Car(1, 0, 1, 'car1', 'Pate'),
+            Car(2, 0, 2, 'car2', 'NewGreatCar')
             ]
-        """
         try:
-            print("Adding listener for shopping list")
+           # print("Adding listener for shopping list")
             self.orderThread = firebase_admin.db.reference('orderList').listen(self.orderListener)
         except:
             print("Can't listen to orderlist")
 
-        print(self.testList)
-
     def orderListener(self, event):
-        print(f"OrderListener:\ttype: {event.type}\t")
-        print("Event type")
-        print(event.event_type)  # can be 'put' or 'patch'
-        print("Event path")
-        print(event.path)  # relative to the reference, it seems
-        print("Event data")
-        print(event.data)  # new data at /reference/event.path. None if deleted
-
+        #print(f"OrderListener:\ttype: {event.event_type}\tpath: {event.path}\tdata: {event.data}")
         path = event.path
         newData = event.data
         if(path == "/"):
             self.listInit(newData)
-        else:
-            self.changesToOrder(path, newData)
+        #else:
+            #self.changesToOrder(path, newData)
 
         
     def listInit(self, newData):
         print("Creating new order list!")
-        self.testList = newData
+
+        for iteration in range(len(newData)):
+            #thisProduct = 'product'+iteration+1
+            productID = "prod"+str(iteration)
+            print(newData[productID]['gopigo'])
+            prodCar = newData[productID]['gopigo']
+            prodItem = newData[productID]['item']
+            prodStatus = newData[productID]['progress']
+
+            
+            thisProduct = Product(productID, prodCar, prodItem, prodStatus)
+            self.orders.append(thisProduct)
+        
+        #print(self.orders)
+        #print(self.orders[0].status)
+
+        self.assignCars()
+        #self.printProductsCar()
+        #for product in newData:
+            #self.testList.append(product)
+        #print(self.testList)
+        #self.testList = newData
+
+
+    def assignCars(self):
+        print("Assigning cars for products")
+
+        for item in range(len(self.orders)):
+            if(self.orders[item].status == "ordered"):
+                assignedCar = self.getFirstAvailableCar()
+                if(assignedCar == "No available car at the moment!"):
+                    print("No available car at the moment!")
+                else:
+                    self.orders[item].car = assignedCar
+                    assignedCar.getItem()
+    ##########################################################
+    def printProductsCar(self):
+        for item in range(len(self.orders)):
+            if(self.orders[item].car != "none"):
+                print(self.orders[item].car.carName)
+    ##########################################################
+    def getFirstAvailableCar(self):
+        for car in range(len(self.carList)):
+            if(self.carList[car].status=="standby"):
+                return self.carList[car]
+        return "No available car at the moment!"
 
     def changesToOrder(self, path, newData):
         print(f"order {path} changed with data {newData}")
-
-        
 
     def addProduct(self, prodNumber, car, ):
         self.orders.append({'prodID': prodNumber, 'gopigo': car, 'status': status})
@@ -116,71 +175,22 @@ class Manager:
 
     def changeCarStatus(self, carNumber, newStatus):
         self.carList[carNumber]['status'] = newStatus
-    
-
-myX = 0
-myY = 0
-
-def listener(event):
-    global myX
-    global myY
-    print("Event type")
-    print(event.event_type)  # can be 'put' or 'patch'
-    print("Event path")
-    print(event.path)  # relative to the reference, it seems
-    print("Event data")
-    print(event.data)  # new data at /reference/event.path. None if deleted
-
-    if(event.path == "/"):
-        topicHandler(event.path, event.data)
-    else:
-        print("Something else!")
-
-
-
-def topicHandler(topic, data):
-    topicSplitted = topic.split("/")
-    print(topicSplitted)
-    productNumber = topicSplitted[1]
-    #dataTopic = topicSplitted[2]
-    print(f"New order list: {data}")
-    print(f"Length:{len(data)}")
-    #print(data['product1']['item'])
-
-    for iteration in range(len(data)):
-        #thisProduct = 'product'+iteration+1
-        #prodID = iteration+1
-        print(data['prod'+str(iteration)])
-        
-    #pleaseerror
-    """
-    print("############################")
-    for product in data:
-        print(f"{product}:")
-        #print(f"\tDesignated car: {product.gopigo}")
-        #print(f"\tItem: {product.item}")
-        #print(f"\tProgress: {product.status}")
-    for product in res:
-        print(f"{product}:")
-
-    print("###########################")
-    """
-    
+  
 
 
 try:
     carHandler = Manager()
-    ourthread = firebase_admin.db.reference('orderList').listen(listener)
+    #ourthread = firebase_admin.db.reference('orderList').listen(listener)
     #ref = db.reference('cars')
     #cartarg_ref = ref.child('car0/target')
     #carpos_ref = ref.child('car0/position')
     while True:
-        time.sleep(0.1)
+        time.sleep(1)
         
 except KeyboardInterrupt:
 
     print('Interrupted')
-    ourthread.close()
+    #ourthread.close()
     print("Thread closed")
     sys.exit()
 
