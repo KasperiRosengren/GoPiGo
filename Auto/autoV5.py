@@ -102,11 +102,9 @@ def on_message(client, userdata, msg):
 
         calculateRoute(int(coordinateX), int(coordinateY))
 
-    elif(topic=="gopigo/car2/command/location"):
-        if(message == "b'load'"):
-            print("go to load")
-        elif(message == "b'unload'"):
-            print("go to unload")
+    elif(topic=="gopigo/car2/command/delivery"):
+        print("go to load")
+        Delivery()
 
 def AlterHeading(degrees):    
     global myHeading
@@ -121,7 +119,7 @@ def AlterHeading(degrees):
 def DecideTurn(direction):
     global myHeading
     if(direction == "right"):
-        ==90):
+        if(myHeading==90):
             pass
         elif(myHeading==180):
             TurnLeft()
