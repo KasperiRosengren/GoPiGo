@@ -51,15 +51,14 @@ MinDistance = 250
 AllWhiteCounter = 0
 
 
-maze = [[0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0]]
+maze = [[1, 1, 0, 0, 0, 0, 1, 1],
+        [1, 1, 0, 0, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 0, 1, 0],
+        [1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 1],
+        [0, 1, 0, 0, 0, 0, 1, 1],
+        [0, 1, 0, 0, 0, 0, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1]]
 
 class Node():
     """A node class for A* Pathfinding"""
@@ -102,11 +101,9 @@ def on_message(client, userdata, msg):
 
         calculateRoute(int(coordinateX), int(coordinateY))
 
-    elif(topic=="gopigo/car2/command/location"):
-        if(message == "b'load'"):
-            print("go to load")
-        elif(message == "b'unload'"):
-            print("go to unload")
+    elif(topic=="gopigo/car2/command/delivery"):
+        print("go to load")
+        Delivery()
 
 def AlterHeading(degrees):    
     global myHeading
@@ -121,7 +118,7 @@ def AlterHeading(degrees):
 def DecideTurn(direction):
     global myHeading
     if(direction == "right"):
-        ==90):
+        if(myHeading==90):
             pass
         elif(myHeading==180):
             TurnLeft()
@@ -598,15 +595,14 @@ def AvoidObstacle():
 
 def ResetMaze():
     global maze
-    maze = [[0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0]]
+    maze = [[1, 1, 0, 0, 0, 0, 1, 1],
+            [1, 1, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 1, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 1],
+            [0, 1, 0, 0, 0, 0, 1, 1],
+            [0, 1, 0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 0, 0, 0, 1, 1]]
 
 
 def  calculateRoute(coordinateX, coordinateY):
@@ -813,7 +809,7 @@ def Main():
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("192.168.0.101", 1883, 60)
+    client.connect("192.168.0.102", 1883, 60)
     client.loop_forever()
 
 Main()
