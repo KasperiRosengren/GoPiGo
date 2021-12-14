@@ -2,8 +2,8 @@ import firebase_admin
 #from firebaseConfFile import config
 #from firebaseConfFile import confSJON
 
-from firebaseConfTemp import config
-from firebaseConfTemp import confSJON
+from firebaseDemoConf import config
+from firebaseDemoConf import confSJON
 
 from firebase_admin import credentials
 from firebase_admin import db
