@@ -219,7 +219,9 @@ class Manager:
             Car(3, 0, 3, 'car3', 'Pekka', self)
             ]
         """
-        self.carList = [Car(0, 0, 0, 'car0', 'Niilo', self)]
+        self.carList = [
+            Car(0, 0, 0, 'car0', 'Niilo', self)
+        ]
         try:
            # print("Adding listener for shopping list")
             self.orderThread = firebase_admin.db.reference('orderList').listen(self.orderListener)
@@ -233,7 +235,7 @@ class Manager:
         if(path == "/" and event.data != None):
             if(event.data != "0"):
                 self.listInit(newData)
-        elif(path == "/" or event.data != None):
+        elif(path == "/" and event.data != None):
             if(event.data == "0" or event.data == None):
                 self.orders = []
         else:
