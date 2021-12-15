@@ -34,8 +34,8 @@ Ki = 0.0 # ditto
 Kd = 2500.0 # ditto as above
 
 NeedToNavigate = True
-myLocationX = 1
-myLocationY = 1
+myLocationX = 5
+myLocationY = 0
 destinationX = 0
 destinationY = 0
 myHeading = 0
@@ -47,7 +47,7 @@ ServoPosRight = 100
 ServoPosLeft = 180
 ServoPosCenter = 135
 
-MinDistance = 250
+MinDistance = 350
 AllWhiteCounter = 0
 
 
@@ -55,7 +55,7 @@ maze = [[1, 1, 0, 0, 0, 0, 1, 1],
         [1, 1, 0, 0, 0, 0, 0, 0],
         [1, 1, 0, 0, 0, 0, 1, 0],
         [1, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 1, 1],
+        [0, 0, 0, 1, 0, 0, 1, 1],
         [0, 1, 0, 0, 0, 0, 1, 1],
         [0, 1, 0, 0, 0, 0, 1, 1],
         [0, 0, 0, 0, 0, 0, 1, 1]]
@@ -81,7 +81,7 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("gopigo/car2/#")
+    client.subscribe("gopigo/car0/#")
 
 
 
@@ -91,7 +91,7 @@ def on_message(client, userdata, msg):
     print("Topic: "+topic)
     print("Message: "+message)
 
-    if(topic=="gopigo/car2/command/go"):
+    if(topic=="gopigo/car0/command/go"):
         print("go somewhere topic")
         tempMes = message.split(",")
         coordinateX = tempMes[0]
@@ -101,9 +101,15 @@ def on_message(client, userdata, msg):
 
         calculateRoute(int(coordinateX), int(coordinateY))
 
-    elif(topic=="gopigo/car2/command/delivery"):
-        print("go to load")
-        Delivery()
+    elif(topic=="gopigo/car0/command/delivery"):
+        if (message == "b'load'"):
+            Load()
+        elif (message == "b'unload'"):
+            Unload()
+        elif (message == "b'leaveunload'"):
+            Leaveunloading()
+        elif (message == "b'pit'"):
+            Pit()
 
 def AlterHeading(degrees):    
     global myHeading
@@ -204,15 +210,15 @@ def GOForward(values):
             
             
 def TurnRight():
-    gpg.turn_degrees(95)
+    gpg.turn_degrees(90)
     AlterHeading(90)
     
 def TurnLeft():
-    gpg.turn_degrees(-95)
+    gpg.turn_degrees(-90)
     AlterHeading(-90)
 
 def Turn180():
-    gpg.turn_degrees(193)
+    gpg.turn_degrees(180)
     AlterHeading(180)
 
 
@@ -599,7 +605,7 @@ def ResetMaze():
             [1, 1, 0, 0, 0, 0, 0, 0],
             [1, 1, 0, 0, 0, 0, 1, 0],
             [1, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 1, 0, 0, 1, 1],
             [0, 1, 0, 0, 0, 0, 1, 1],
             [0, 1, 0, 0, 0, 0, 1, 1],
             [0, 0, 0, 0, 0, 0, 1, 1]]
@@ -735,6 +741,7 @@ def  calculateRoute(coordinateX, coordinateY):
     print("next stop")
 
 def CheckNextGrid():
+    
     global ServoPosCenter
     global MinDistance
 
@@ -746,12 +753,15 @@ def CheckNextGrid():
     else:
         return True
 
-def Delivery():
+def Load():
+    global client
     #drive to unloading pay
     calculateRoute(6, 1)
+    #client.publish("gopigo/car0/status", payload = "travel_to_loading")
 
     #has arrived at loading bay
     DecideTurn("right")
+    #client.publish("gopigo/car0/status", payload = "que_to_loading")
     while(CheckNextGrid()==False):
         time.sleep(0.5)
     DriveToNextGrid()
@@ -762,22 +772,32 @@ def Delivery():
     while(CheckNextGrid()==False):
         time.sleep(0.5)
     DriveToNextGrid()
+    time.sleep(0.05)
+    client.publish("gopigo/car0/status", payload = "loading")
+    
 
     #notify server
     #ready to get package
 
     #Wait for response
     
+def Unload():
+    global client
+    global myLocationX
+    global myLocationY
     DecideTurn("left")
     while(CheckNextGrid()==False):
         time.sleep(0.5)
     DriveToNextGrid()
+    myLocationX = 6
+    myLocationY = 3
 
     #drive to unloading pay
     calculateRoute(1, 7)
 
     #has arrived at unloading bay
-    DecideTurn("right")
+    #client.publish("gopigo/car0/status", payload = "que_to_unloading")
+    DecideTurn("left")
     while(CheckNextGrid()==False):
         time.sleep(0.5)
     DriveToNextGrid()
@@ -788,13 +808,17 @@ def Delivery():
     while(CheckNextGrid()==False):
         time.sleep(0.5)
     DriveToNextGrid()
-
-    #notify server
-    #ready to give package
-
-    #wait for response
+    time.sleep(0.05)
+    client.publish("gopigo/car0/status", payload = "unloading")
 
 
+
+def Leaveunloading():
+    global client
+    global myLocationX
+    global myLocationY
+
+    DecideTurn("down")
     while(CheckNextGrid()==False):
         time.sleep(0.5)
     DriveToNextGrid()
@@ -802,14 +826,25 @@ def Delivery():
     while(CheckNextGrid()==False):
         time.sleep(0.5)
     DriveToNextGrid()
-    
-    calculateRoute(2, 0) #drive to pit
-    
-def Main():
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect("192.168.0.102", 1883, 60)
-    client.loop_forever()
+    myLocationX = 1
+    myLocationY = 4
+    client.publish("gopigo/car0/status", payload = "leftunloading")
 
-Main()
+
+
+    
+        #notify server
+    #ready to give package
+
+    #wait for response
+
+def Pit():
+    calculateRoute(5, 0) #drive to pit
+    DecideTurn("up")
+    
+#gpg.stop()
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
+client.connect("192.168.0.102", 1883, 6000)
+client.loop_forever()
