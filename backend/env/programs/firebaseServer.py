@@ -25,10 +25,8 @@ class Product:
         self.id = productID
         self.status = status
 
-        #client.subscribe("gopigo/car2/#")
 
         try:
-            #print(f"Adding product listener for {self.id}")
             self.productListenerThread = firebase_admin.db.reference(f'orderList/{self.id}').listen(self.productListener)
 
         except:
@@ -45,17 +43,20 @@ class Product:
                 elif(event.data == "unloaded"):
                     print(f"{self.id} was unloaded from {self.car.carName}")
                     self.car.deliverItem()
+                    self.productListenerThread.close()
             elif(event.path == "/"):
                 print(f"{self.id} status changed")
                 if(event.data=="None" or event.data == None):
                     print(f"{self.id} was unloaded from {self.car.carName}")
                     self.car.deliverItem()
+                    self.productListenerThread.close()
                 elif(event.data['status'] == "loaded"):
                     print(f"{self.id} was loaded on {self.car.carName}")
                     self.car.fetchItem()
                 elif(event.data['status'] == "unloaded"):
                     print(f"{self.id} was unloaded from {self.car.carName}")
                     self.car.deliverItem()
+                    self.productListenerThread.close()
         except Exception as e:
             print("Product listener failed")
             print(e)
@@ -126,15 +127,12 @@ class Car:
         print("Connected with result code "+str(rc))
         cartopic = f"gopigo/{self.carName}/#"
 
-        # Subscribing in on_connect() means that if we lose the connection and
-        # reconnect then subscriptions will be renewed.
         self.client.subscribe(cartopic)
 
     def on_message(self, client, userdata, msg):
         topic = msg.topic
         message = str(msg.payload)
-        #print("Topic: "+topic)
-        #print("Message: "+message)
+
         print(f"MQTT message, Topic: {topic}, message: {message}")
 
         if(topic == f"gopigo/{self.carName}/status"):
@@ -151,7 +149,18 @@ class Car:
                 if(self.carManager.isAnyOrderedPackage(self)==False):
                     self.status = "standby"
                     firebase_admin.db.reference(f"cars/{self.carName}").update({'status': 'standby'})
-    
+        elif(topic == f"gopigo/{self.carName}/location"):
+            tempMes = message.split(",")
+            coordinateX = tempMes[0]
+            coordinateX = coordinateX[2:]
+            coordinateY = tempMes[1]
+            coordinateY = coordinateY[:-1]
+            print(f"{self.carName} New Coordinates: X: {coordinateX}, Y: {coordinateY}")
+            self.position['x'] = coordinateX
+            self.position['y'] = coordinateY
+            firebase_admin.db.reference(f"cars/{self.carName}/position").update({'x': coordinateX, 'y': coordinateY})
+
+
     def getNewPackage(self, package):
         self.deliveryPackage = package
         firebase_admin.db.reference(f"orderList/{self.deliveryPackage.id}").update({'gopigo': self.carName})
@@ -204,26 +213,15 @@ class Manager:
     def __init__(self):
         self.orders = []
         self.testList = []
-        """
-        self.carList = [
-            {'car0': Car(0, 0, 0, 'car0', 'Niilo')},
-            {'car1': Car(1, 0, 1, 'car1', 'Pate')},
-            {'car2': Car(2, 0, 2, 'car2', 'NewGreatCar')}
-            ]
-        """
-        """
+        
         self.carList = [
             Car(0, 0, 0, 'car0', 'Niilo', self),
             Car(1, 0, 1, 'car1', 'Pate', self),
             Car(2, 0, 2, 'car2', 'Petri', self),
             Car(3, 0, 3, 'car3', 'Pekka', self)
             ]
-        """
-        self.carList = [
-            Car(0, 0, 0, 'car0', 'Niilo', self)
-        ]
+        
         try:
-           # print("Adding listener for shopping list")
             self.orderThread = firebase_admin.db.reference('orderList').listen(self.orderListener)
         except:
             print("Can't listen to orderlist")
@@ -245,8 +243,7 @@ class Manager:
                 self.AddNewProduct(productName, newData)
             except Exception as e:
                 print(e)
-        #else:
-            #self.changesToOrder(path, newData)
+
 
     def AddNewProduct(self, productID, data):
         prodCar = data['gopigo']
@@ -260,7 +257,6 @@ class Manager:
         print("Creating new order list!")
 
         for iteration in range(len(newData)):
-            #thisProduct = 'product'+iteration+1
             productID = "product"+str(iteration)
             print(newData[productID]['gopigo'])
             prodCar = newData[productID]['gopigo']
@@ -271,15 +267,9 @@ class Manager:
             thisProduct = Product(productID, prodCar, prodItem, prodStatus)
             self.orders.append(thisProduct)
         
-        #print(self.orders)
-        #print(self.orders[0].status)
 
         self.assignCars()
-        #self.printProductsCar()
-        #for product in newData:
-            #self.testList.append(product)
-        #print(self.testList)
-        #self.testList = newData
+
 
 
     def assignCars(self):
@@ -292,17 +282,16 @@ class Manager:
                     print("No available car at the moment!")
                 else:
                     self.orders[item].car = assignedCar
-                    print("#########################################")
                     print(self.orders[item])
                     assignedCar.getNewPackage(self.orders[item])
                     assignedCar.getItem()
                     time.sleep(3)
-    ##########################################################
+
     def printProductsCar(self):
         for item in range(len(self.orders)):
             if(self.orders[item].car != "none"):
                 print(self.orders[item].car.carName)
-    ##########################################################
+
     def getFirstAvailableCar(self):
         for car in range(len(self.carList)):
             if(self.carList[car].status=="standby"):
@@ -336,37 +325,20 @@ class Manager:
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    #client.subscribe("gopigo/car2/#")
-
-
 
 def on_message(client, userdata, msg):
     topic = msg.topic
     message = str(msg.payload)
     print("Topic: "+topic)
     print("Message: "+message)
-    """
-    if(topic=="gopigo/car2/command/go"):
-        print("go somewhere topic")
-        tempMes = message.split(",")
-        coordinateX = tempMes[0]
-        coordinateX = coordinateX[2:]
-        coordinateY = tempMes[1]
-        coordinateY = coordinateY[:-1]
 
-        calculateRoute(int(coordinateX), int(coordinateY))
-    """
 
 
 
 try:
-    print("#################################")
-    print("#################################")
-    print("#################################")
-    print("#################################")
-    print("#################################")
+    print("##############################")
+    print("Car commander script starting")
+    print("##############################")
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
@@ -386,24 +358,3 @@ except KeyboardInterrupt:
     #ourthread.close()
     print("Thread closed")
     sys.exit()
-
-
-
-"""
-    Keeps track of where all cars are located and where they are going. Assigns new targets
-
-
-    Pepper or mobile app notifies that customer has arrived to fetch their order.
-        -Check how many orders for unloading and loading docks
-            -Assign docks to the least used one
-        -Check for available cars
-            -Available:
-                -Assign first available car for the order
-                -Send the cordinates to car
-            -Not available:
-                -Try again in 10 seconds
-    
-
-
-
-"""
